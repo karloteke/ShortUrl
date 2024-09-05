@@ -60,6 +60,16 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 
+
+// Cadena de conexión BBDD
+var connectionString = builder.Configuration.GetConnectionString("ServerDB_localhost");
+// var connectionString = builder.Configuration.GetConnectionString("ServerAzure");
+// var connectionString = builder.Configuration.GetConnectionString("ServerDB");
+
+builder.Services.AddDbContext<ShortUrlContext>(options =>
+    options.UseSqlServer(connectionString)
+);
+
 // Configure CORS
 builder.Services.AddCors(options =>
 {
@@ -74,22 +84,29 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
-// if (app.Environment.IsDevelopment())
+
+//Migración automática
+// using (var scope = app.Services.CreateScope())
 // {
-//     app.UseDeveloperExceptionPage();
-//     app.UseSwagger();
-//     app.UseSwaggerUI(c =>
-//     {
-//         c.SwaggerEndpoint("/swagger/v1/swagger.json", "ShortUrl API v1");
-//         c.RoutePrefix = string.Empty; // Serve Swagger UI at the app root
-//     });
+//     var services = scope.ServiceProvider;
+//     var context = services.GetRequiredService<ShortUrlContext>(); 
+//     context.Database.Migrate();
 // }
-// else
-// {
-//     app.UseExceptionHandler("/Home/Error");
-//     app.UseHsts();
-// }
+
+
+// Configurar el pipeline HTTP.
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+    
+    // Habilitar Swagger y el middleware de Swagger UI
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+        c.RoutePrefix = string.Empty;  // Hace que Swagger UI se cargue en la ruta raíz (localhost:5121/).
+    });
+}
 
 app.UseDeveloperExceptionPage();
 app.UseCors("MyAllowedOrigins");
